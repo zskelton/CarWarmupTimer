@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">WeatherCarTimer</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">Enoch\'s Car Timer</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <!--    Strings for Announcing Data-->
+    <string name="label_weather">Current Temperature:</string>
+    <string name="txt_weather">50°F</string>
+    <string name="label_time2start">Time Needed to Warm:</string>
+    <string name="txt_time2start">05:00</string>
+    <!--    Strings for Interactive-ish Elements-->
+    <string name="btn_startTimer">Start</string>
+    <string name="txt_timer">05:00</string>
+    <string name="txt_status">Running...</string>
+</resources>
