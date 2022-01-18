@@ -10,7 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.Switch
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.android.volley.Request
@@ -36,6 +36,7 @@ class FirstFragment : Fragment() {
     private lateinit var txtTimerLength: TextView
     private lateinit var swMomMode: SwitchMaterial
     private lateinit var cdTimer: CountDownTimer
+    private lateinit var pBarTime: ProgressBar
     private var timerLength: Long = 300
     private var momMode: Boolean = true
     private var timerOn: Boolean = false
@@ -52,6 +53,7 @@ class FirstFragment : Fragment() {
     private fun startTimer(view: View) {
         // Variables
         val tag = "timer"
+        pBarTime.progress = 100
 
         // Announce
         txtStatus.text = getString(R.string.txt_running_timer)
@@ -63,6 +65,10 @@ class FirstFragment : Fragment() {
             override fun onTick(millisUntilFinished: Long) {
                 // Update Timer
                 txtTimer.text = getString(R.string.txt_current_time, (millisUntilFinished / 1000))
+                // Update Progress Bar
+                val progress = (millisUntilFinished/timerLength)/10
+                Log.d("progress", progress.toString())
+                pBarTime.progress = progress.toInt()
             }
 
             // Run on Finish
@@ -105,7 +111,8 @@ class FirstFragment : Fragment() {
                 // Parse JSON
                 val main = JSONObject(response).getJSONObject("main")
                 val temp = k2f(main.getDouble("temp"))
-                txtTemp.text = getString(R.string.txt_weather_current, temp.roundToInt())
+                val tempInt = temp.roundToInt()
+                txtTemp.text = getString(R.string.txt_weather_current, tempInt)
                 Log.d("json", main.toString())
             } catch (e: JSONException) {
                 // Error in JSON
@@ -158,6 +165,7 @@ class FirstFragment : Fragment() {
         txtTimer = view.findViewById(R.id.txt_timer)
         swMomMode = view.findViewById(R.id.switch_mom)
         txtTimerLength = view.findViewById(R.id.txt_recommendedTime)
+        pBarTime = view.findViewById(R.id.bar_timerProgress)
 
         // Initialize Labels
         swMomMode.text = getString(R.string.switch_mom, "On")
@@ -176,6 +184,7 @@ class FirstFragment : Fragment() {
                 timerOn = true
             } else {
                 cdTimer.cancel()
+                pBarTime.progress = 45
                 txtTimer.text = getString(R.string.txt_current_time, timerLength)
                 btnStart.text = getString(R.string.txt_start)
                 timerOn = false
@@ -189,15 +198,24 @@ class FirstFragment : Fragment() {
 
         // Set Timer
         binding.switchMom.setOnClickListener {
+            // Kill Active Timer
+            if(timerOn) {
+                btnStart.text = getString(R.string.txt_start)
+                cdTimer.cancel()
+                pBarTime.progress = 45
+                timerOn = false
+            }
+            // Set New Times
             if(momMode) {
-                swMomMode.text = getString(R.string.switch_mom, "Off")
                 timerLength = 10
+                swMomMode.text = getString(R.string.switch_mom, "Off")
                 momMode = false
             } else {
                 timerLength = 300
                 swMomMode.text = getString(R.string.switch_mom, "On")
                 momMode = true
             }
+            // Update Labels
             txtTimer.text = getString(R.string.txt_current_time, timerLength)
             txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
         }
