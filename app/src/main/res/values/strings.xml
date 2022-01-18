@@ -11,11 +11,13 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <!--    Strings for Announcing Data-->
     <string name="label_weather">Current Temperature:</string>
-    <string name="txt_weather">50°F</string>
+    <string name="txt_weather">Need to Query</string>
     <string name="label_time2start">Time Needed to Warm:</string>
-    <string name="txt_time2start">05:00</string>
+    <string name="txt_time2start">300 secs</string>
     <!--    Strings for Interactive-ish Elements-->
     <string name="btn_startTimer">Start</string>
+    <string name="btn_refreshQuery">Refresh</string>
     <string name="txt_timer">05:00</string>
     <string name="txt_status">Running...</string>
+    <string name="switch_mom">Mom Mode On</string>
 </resources>

@@ -1,5 +1,7 @@
 package android.example.weathercartimer
 
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Bundle
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -11,11 +13,19 @@ import android.view.Menu
 import android.view.MenuItem
 import android.example.weathercartimer.databinding.ActivityMainBinding
 import android.widget.Button
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+    private var activeLocation: Boolean = false;
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +38,26 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
+
+        // Cheeck Location Permissions
+        val locationPermissionRequest = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            when {
+                permissions.getOrDefault(android.Manifest.permission.ACCESS_COARSE_LOCATION, true) -> {
+                    activeLocation = true
+                } else -> {
+                    activeLocation = false
+                }
+            }
+        }
+
+        if(!activeLocation) {
+            locationPermissionRequest.launch(arrayOf(
+                android.Manifest.permission.ACCESS_COARSE_LOCATION))
+        }
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
