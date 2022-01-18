@@ -1,49 +1,33 @@
 package android.example.weathercartimer
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.IntentSender
+import android.example.weathercartimer.databinding.FragmentFirstBinding
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.os.CountDownTimer
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.navigation.fragment.findNavController
-import android.example.weathercartimer.databinding.FragmentFirstBinding
-import android.location.Location
-import android.os.CountDownTimer
-import android.util.Log
 import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.Fragment
 import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.material.snackbar.Snackbar
-import com.android.volley.RequestQueue
-import com.android.volley.VolleyError
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.*
-import com.google.android.gms.tasks.Task
 import org.json.JSONException
 import org.json.JSONObject
 import kotlin.math.roundToInt
-
-import android.media.RingtoneManager
-
-import android.media.Ringtone
-import android.net.Uri
 
 
 /**
  * A Fragment to View the Main Activity
  */
 class FirstFragment : Fragment() {
-    // Globals
+    /* GLOBALS */
     private lateinit var btnStart: Button
     private lateinit var txtStatus: TextView
     private lateinit var txtTemp: TextView
@@ -56,78 +40,113 @@ class FirstFragment : Fragment() {
     private var timerOn: Boolean = false
     private var queryRan: Boolean = false
 
+    /* BEGIN UTILITY FUNCTIONS */
     // Convert Kelvin to Fahrenheit
     private fun k2f(inKelvin: Double): Double {
-        return (((inKelvin - 273.15) * 9.0)/5.0) + 32.0;
+        // Return Conversion
+        return (((inKelvin - 273.15) * 9.0)/5.0) + 32.0
     }
 
+    // Function to Start Timer
     private fun startTimer(view: View) {
-        txtStatus.setText("Running Timer")
-        cdTimer = object : CountDownTimer(timerLength*1000, 1000) {
+        // Variables
+        val tag = "timer"
 
+        // Announce
+        txtStatus.text = getString(R.string.txt_running_timer)
+        Log.i(tag, "Begin Timer Function")
+
+        // Load Timer into Global
+        cdTimer = object : CountDownTimer(timerLength*1000, 1000) {
+            // Run on Tick
             override fun onTick(millisUntilFinished: Long) {
-                txtTimer.setText("${millisUntilFinished / 1000} secs")
+                // Update Timer
+                txtTimer.text = getString(R.string.txt_current_time, (millisUntilFinished / 1000))
             }
 
+            // Run on Finish
             override fun onFinish() {
-                txtTimer.setText("DONE!")
+                // Update Text
+                txtTimer.text = getString(R.string.txt_done)
+                // Play Ringtone
                 val notification: Uri =
                     RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 val r = RingtoneManager.getRingtone(
-                    requireActivity()!!.applicationContext,
+                    requireActivity().applicationContext,
                     notification)
                 r.play()
+                // Announce Success
                 Snackbar.make(view, "Timer Done!", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
+                    .setAction("Action", null).show()
             }
         }.start()
+
+        // Announce
+        Log.i(tag, "End Timer Function")
     }
 
     // Function to Run Web Query
-    private fun runQuery(view: View, url: String = "https://www.google.com") {
-        val TAG = "Query";
+    private fun runQuery(view: View) {
+        // Variables
+        val tag = "Query"
+        val url = "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&q=Ames"
+        queryRan = false
 
-        txtStatus.setText("Running Query...")
+        // Announce
+        txtStatus.text = getString(R.string.txt_query_running)
+        Log.i(tag, "Begin Query Function")
 
-        var result: String = "";
-        // From: https://stackoverflow.com/questions/28599377/how-to-run-volley-in-fragmentnavigation-drawer
+        // Set Response Listener
         val res = Response.Listener<String> { response ->
-            Log.d(TAG, "Got Response: ${response}")
-            txtStatus.setText("Query Done.")
+            Log.d(tag, "Got Response: $response")
+            txtStatus.text = getString(R.string.txt_query_done)
             try {
+                // Parse JSON
                 val main = JSONObject(response).getJSONObject("main")
                 val temp = k2f(main.getDouble("temp"))
-                val string = "Temp at ${temp.roundToInt()}°F"
-                txtTemp.setText("${temp.roundToInt()}°F")
-                Log.d("json", string)
+                txtTemp.text = getString(R.string.txt_weather_current, temp.roundToInt())
+                Log.d("json", main.toString())
             } catch (e: JSONException) {
-                Log.e("json error", "JSON Error")
-                result = "json error"
+                // Error in JSON
+                Log.e("json", "JSON Error")
                 e.printStackTrace()
             }
         }
-        val eros = Response.ErrorListener { volleyError -> Snackbar.make(view,"volley error - $volleyError", Snackbar.LENGTH_LONG).setAction("Action", null).show() }
+
+        // Set Error Handler
+        val eros = Response.ErrorListener { volleyError ->
+            Log.e(tag, volleyError.toString())
+            Snackbar.make(view,"volley error - $volleyError", Snackbar.LENGTH_LONG).setAction("Action", null).show()
+        }
+
+        // Create Request
         val request = StringRequest(Request.Method.GET, url, res,eros)
-        val rQueue = Volley.newRequestQueue(requireActivity()!!.applicationContext)
+
+        // Add to Queue
+        val rQueue = Volley.newRequestQueue(requireActivity().applicationContext)
         rQueue.add(request)
+
+        // Announce Complete
+        Log.i(tag, "End Query Function")
         queryRan = true
     }
+    /* END UTILITY FUNCTIONS */
 
     private var _binding: FragmentFirstBinding? = null
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
+    // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
 
-    @SuppressLint("MissingPermission")
+    // Create View
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentFirstBinding.inflate(inflater, container, false)
         return binding.root
     }
 
+    // Run on Start
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -139,47 +158,47 @@ class FirstFragment : Fragment() {
         swMomMode = view.findViewById(R.id.switch_mom)
         txtTimerLength = view.findViewById(R.id.txt_recommendedTime)
 
+        // Initialize Labels
+        swMomMode.text = getString(R.string.switch_mom, "On")
+        txtTimer.text = getString(R.string.txt_current_time, timerLength)
+        txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
+
         // Start Location
         // TODO: Fix getting location
 
         // Start Timer or Reset Depending on State
-        binding.btnStartTimer.setOnClickListener { view ->
-            if(!queryRan) runQuery(view, "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&q=Ames")
+        binding.btnStartTimer.setOnClickListener { view_ ->
+            if(!queryRan) runQuery(view_)
             if(!timerOn)  {
-                startTimer(view)
-                btnStart.setText("Reset")
+                startTimer(view_)
+                btnStart.text = getString(R.string.txt_reset)
                 timerOn = true
             } else {
-                if(cdTimer != null) cdTimer.cancel()
-                txtTimer.setText("$timerLength secs")
-                btnStart.setText("Start")
+                cdTimer.cancel()
+                txtTimer.text = getString(R.string.txt_current_time, timerLength)
+                btnStart.text = getString(R.string.txt_start)
                 timerOn = false
             }
-
         }
 
         // Get Temperature
-        binding.btnRefreshQuery.setOnClickListener { view ->
-            // runQuery(view, "https://api.weather.gov/points/42.0486,-93.6945")
-            // runQuery(view, "https://ipinfo.io/json?token=99d366e55a0bdb")
-            runQuery(view, "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&q=Ames")
+        binding.btnRefreshQuery.setOnClickListener { view_ ->
+            runQuery(view_)
         }
 
         // Set Timer
-        binding.switchMom.setOnClickListener { view ->
+        binding.switchMom.setOnClickListener {
             if(momMode) {
-                swMomMode.setText("Mom Mode Off")
+                swMomMode.text = getString(R.string.switch_mom, "Off")
                 timerLength = 10
-                txtTimer.setText("${timerLength} secs")
-                txtTimerLength.setText("${timerLength} secs")
                 momMode = false
             } else {
                 timerLength = 300
-                swMomMode.setText("Mom Mode On")
-                txtTimer.setText("${timerLength} secs")
-                txtTimerLength.setText("${timerLength} secs")
+                swMomMode.text = getString(R.string.switch_mom, "On")
                 momMode = true
             }
+            txtTimer.text = getString(R.string.txt_current_time, timerLength)
+            txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
         }
     }
 
