@@ -1,17 +1,22 @@
 package android.example.weathercartimer
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.example.weathercartimer.databinding.FragmentFirstBinding
+import android.location.Location
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +24,8 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat.getSystemService
@@ -27,6 +34,10 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import org.json.JSONException
@@ -47,10 +58,14 @@ class FirstFragment : Fragment() {
     private lateinit var swMomMode: SwitchMaterial
     private lateinit var cdTimer: CountDownTimer
     private lateinit var pBarTime: ProgressBar
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var timerLength: Long = 300
     private var momMode: Boolean = true
     private var timerOn: Boolean = false
     private var queryRan: Boolean = false
+    private var canUseLoc: Boolean = true
+    private var lat: String = "42.0347"
+    private var lon: String = "-93.6199"
 
     /* BEGIN UTILITY FUNCTIONS */
     // Convert Kelvin to Fahrenheit
@@ -123,7 +138,9 @@ class FirstFragment : Fragment() {
     private fun runQuery(view: View) {
         // Variables
         val tag = "Query"
-        val url = "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&q=Ames"
+        // Defaults to Ames, IA with no location
+        // val default = "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&lat=42.0347&lon=-93.6199"
+        val url = "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&lat=$lat&lon=$lon"
         queryRan = false
 
         // Announce
@@ -179,12 +196,16 @@ class FirstFragment : Fragment() {
 
     // Send Notification
     private fun sendNotification() {
+        // Variables
         val context = requireActivity().applicationContext
+
+        // Create Intent
         val intent = Intent(context, FirstFragment::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, 0)
 
+        // Build Notification (static text, as it is not likely to change)
         var builder = NotificationCompat.Builder(context, getString(R.string.notification_id))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(getString(R.string.notification_title))
@@ -193,11 +214,51 @@ class FirstFragment : Fragment() {
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
+        // Send Notification
         with(NotificationManagerCompat.from(context)) {
             // notificationId is a unique int for each notification that you must define
             notify(1, builder.build())
         }
     }
+
+    // Check Location Permissions
+    private fun checkLocationPermissions() {
+        // Variables
+        val context = requireActivity().applicationContext
+
+        // Check Permissions
+        val locationPermissionRequest = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { permissions ->
+            canUseLoc = when {
+                permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                    true
+                } else -> {
+                    false
+                }
+            }
+        }
+
+        // Set Permissions if Needed
+        locationPermissionRequest.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
+    // Get Last Location
+    @SuppressLint("MissingPermission")
+    private fun findUserLocation() {
+        // Variables
+        val context = requireActivity().applicationContext
+
+        // Set Last Known Location
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location : Location? ->
+                lat = location?.getLatitude().toString()
+                lon = location?.getLongitude().toString()
+                Log.d("location", location.toString())
+            }
+    }
+
     /* END UTILITY FUNCTIONS */
 
     private var _binding: FragmentFirstBinding? = null
@@ -232,14 +293,17 @@ class FirstFragment : Fragment() {
         txtTimer.text = getString(R.string.txt_current_time, timerLength)
         txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
 
-        // Run Query Early
+        // Notification Setup
+        createNotificationChannel()
+
+        // Run Query
         runQuery(view)
 
         // Start Location
-        // TODO: Fix getting location
-
-        // Notification Setup
-        createNotificationChannel()
+        checkLocationPermissions()
+        if(canUseLoc) {
+            findUserLocation()
+        }
 
         // Start Timer or Reset Depending on State
         binding.btnStartTimer.setOnClickListener { view_ ->
@@ -285,6 +349,9 @@ class FirstFragment : Fragment() {
             txtTimer.text = getString(R.string.txt_current_time, timerLength)
             txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
         }
+
+        // Run Late
+        val handler = Handler().postDelayed({runQuery(view)}, 1000)
     }
 
     override fun onDestroyView() {
