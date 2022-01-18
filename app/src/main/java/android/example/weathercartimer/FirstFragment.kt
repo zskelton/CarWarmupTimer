@@ -18,6 +18,7 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.switchmaterial.SwitchMaterial
 import org.json.JSONException
 import org.json.JSONObject
 import kotlin.math.roundToInt
@@ -33,7 +34,7 @@ class FirstFragment : Fragment() {
     private lateinit var txtTemp: TextView
     private lateinit var txtTimer: TextView
     private lateinit var txtTimerLength: TextView
-    private lateinit var swMomMode: Switch
+    private lateinit var swMomMode: SwitchMaterial
     private lateinit var cdTimer: CountDownTimer
     private var timerLength: Long = 300
     private var momMode: Boolean = true
