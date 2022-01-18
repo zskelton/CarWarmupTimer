@@ -67,7 +67,6 @@ class FirstFragment : Fragment() {
                 txtTimer.text = getString(R.string.txt_current_time, (millisUntilFinished / 1000))
                 // Update Progress Bar
                 val progress = (millisUntilFinished/timerLength)/10
-                Log.d("progress", progress.toString())
                 pBarTime.progress = progress.toInt()
             }
 
@@ -111,9 +110,20 @@ class FirstFragment : Fragment() {
                 // Parse JSON
                 val main = JSONObject(response).getJSONObject("main")
                 val temp = k2f(main.getDouble("temp"))
+                // Adjust Time to Temperature
                 val tempInt = temp.roundToInt()
                 txtTemp.text = getString(R.string.txt_weather_current, tempInt)
                 Log.d("json", main.toString())
+                timerLength = when {
+                    tempInt > 32 -> 10
+                    tempInt in 21..32 -> 100
+                    tempInt in 11..20 -> 200
+                    tempInt < 10 -> 300
+                    else -> 300
+                }
+                // Update Labels
+                txtTimer.text = getString(R.string.txt_current_time, timerLength)
+                txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
             } catch (e: JSONException) {
                 // Error in JSON
                 Log.e("json", "JSON Error")
@@ -171,6 +181,9 @@ class FirstFragment : Fragment() {
         swMomMode.text = getString(R.string.switch_mom, "On")
         txtTimer.text = getString(R.string.txt_current_time, timerLength)
         txtTimerLength.text = getString(R.string.txt_current_time, timerLength)
+
+        // Run Query Early
+        runQuery(view)
 
         // Start Location
         // TODO: Fix getting location

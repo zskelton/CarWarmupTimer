@@ -67,7 +67,7 @@
         android:id="@+id/txt_status"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSecondaryVariant"
+        android:background="@color/design_default_color_secondary_variant"
         android:text="@string/txt_running"
         android:textColor="?android:textColorPrimaryInverse"
         app:layout_constraintBottom_toBottomOf="parent"
