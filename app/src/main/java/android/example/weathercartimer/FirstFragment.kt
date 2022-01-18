@@ -1,8 +1,15 @@
 package android.example.weathercartimer
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
+import android.content.Intent
 import android.example.weathercartimer.databinding.FragmentFirstBinding
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
@@ -12,6 +19,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.android.volley.Request
 import com.android.volley.Response
@@ -49,6 +59,23 @@ class FirstFragment : Fragment() {
         return (((inKelvin - 273.15) * 9.0)/5.0) + 32.0
     }
 
+    // Build Notification Channel
+    private fun createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.notification_id)
+            val descriptionText = getString(R.string.notification_desc)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(getString(R.string.notification_id), name, importance).apply {
+                description = descriptionText
+            }
+            // Register the channel with the system
+            val notificationManager = activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
     // Function to Start Timer
     private fun startTimer(view: View) {
         // Variables
@@ -82,6 +109,7 @@ class FirstFragment : Fragment() {
                     notification)
                 r.play()
                 // Announce Success
+                sendNotification()
                 Snackbar.make(view, "Timer Done!", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show()
             }
@@ -148,6 +176,28 @@ class FirstFragment : Fragment() {
         Log.i(tag, "End Query Function")
         queryRan = true
     }
+
+    // Send Notification
+    private fun sendNotification() {
+        val context = requireActivity().applicationContext
+        val intent = Intent(context, FirstFragment::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, 0)
+
+        var builder = NotificationCompat.Builder(context, getString(R.string.notification_id))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(getString(R.string.notification_text))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        with(NotificationManagerCompat.from(context)) {
+            // notificationId is a unique int for each notification that you must define
+            notify(1, builder.build())
+        }
+    }
     /* END UTILITY FUNCTIONS */
 
     private var _binding: FragmentFirstBinding? = null
@@ -187,6 +237,9 @@ class FirstFragment : Fragment() {
 
         // Start Location
         // TODO: Fix getting location
+
+        // Notification Setup
+        createNotificationChannel()
 
         // Start Timer or Reset Depending on State
         binding.btnStartTimer.setOnClickListener { view_ ->

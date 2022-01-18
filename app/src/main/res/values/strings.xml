@@ -23,4 +23,9 @@
     <string name="txt_current_time_recommended">%d Secs</string>
     <string name="txt_weather_placeholder">Need to Query</string>
     <string name="txt_weather_current">%d°F</string>
+    <!-- Notification Strings -->
+    <string name="notification_id">id_car</string>
+    <string name="notification_title">Car is Ready!</string>
+    <string name="notification_desc">Alerts car is ready to start.</string>
+    <string name="notification_text">Start your car, it is warmed up and time to drive.</string>
 </resources>
