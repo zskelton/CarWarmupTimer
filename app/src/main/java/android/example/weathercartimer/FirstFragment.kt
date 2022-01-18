@@ -40,73 +40,50 @@ import android.net.Uri
 
 
 /**
- * A simple [Fragment] subclass as the default destination in the navigation.
+ * A Fragment to View the Main Activity
  */
 class FirstFragment : Fragment() {
     // Globals
+    private lateinit var btnStart: Button
     private lateinit var txtStatus: TextView
     private lateinit var txtTemp: TextView
     private lateinit var txtTimer: TextView
     private lateinit var txtTimerLength: TextView
     private lateinit var swMomMode: Switch
+    private lateinit var cdTimer: CountDownTimer
     private var timerLength: Long = 300
     private var momMode: Boolean = true
+    private var timerOn: Boolean = false
+    private var queryRan: Boolean = false
 
     // Convert Kelvin to Fahrenheit
     private fun k2f(inKelvin: Double): Double {
         return (((inKelvin - 273.15) * 9.0)/5.0) + 32.0;
     }
 
-    // Location Function
-    // TODO: Fix Location Request.
-    private fun createLocationRequest() {
-        Log.d("location", "creating location request")
-
-        val builder = LocationSettingsRequest.Builder()
-
-        val locationRequest = LocationRequest.create()?.apply {
-            interval = 10000
-            fastestInterval = 5000
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
-
-        val client: SettingsClient = LocationServices.getSettingsClient(requireActivity()!!.applicationContext)
-        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
-
-        task.addOnSuccessListener { locationSettingsResponse ->
-            Log.d("location", "received - ${locationSettingsResponse.toString()}")
-        }
-
-        task.addOnFailureListener { exception ->
-            Log.d("location", "error - ${exception.toString()}")
-        }
-    }
-
     private fun startTimer(view: View) {
         txtStatus.setText("Running Timer")
-        object : CountDownTimer((timerLength*1000), 1000) {
+        cdTimer = object : CountDownTimer(timerLength*1000, 1000) {
 
             override fun onTick(millisUntilFinished: Long) {
                 txtTimer.setText("${millisUntilFinished / 1000} secs")
             }
 
             override fun onFinish() {
-                Snackbar.make(view, "Timer Done!", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
                 txtTimer.setText("DONE!")
                 val notification: Uri =
                     RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 val r = RingtoneManager.getRingtone(
                     requireActivity()!!.applicationContext,
-                    notification
-                )
+                    notification)
                 r.play()
+                Snackbar.make(view, "Timer Done!", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
             }
         }.start()
     }
 
     // Function to Run Web Query
-    @SuppressLint("MissingPermission")
     private fun runQuery(view: View, url: String = "https://www.google.com") {
         val TAG = "Query";
 
@@ -118,12 +95,9 @@ class FirstFragment : Fragment() {
             Log.d(TAG, "Got Response: ${response}")
             txtStatus.setText("Query Done.")
             try {
-                val coord = JSONObject(response).getJSONObject("coord");
-                val lon = coord.getDouble("lon")
-                val lat = coord.getDouble("lat")
                 val main = JSONObject(response).getJSONObject("main")
                 val temp = k2f(main.getDouble("temp"))
-                val string = "Temp at $lat, $lon is ${temp.roundToInt()}°F"
+                val string = "Temp at ${temp.roundToInt()}°F"
                 txtTemp.setText("${temp.roundToInt()}°F")
                 Log.d("json", string)
             } catch (e: JSONException) {
@@ -136,12 +110,7 @@ class FirstFragment : Fragment() {
         val request = StringRequest(Request.Method.GET, url, res,eros)
         val rQueue = Volley.newRequestQueue(requireActivity()!!.applicationContext)
         rQueue.add(request)
-
-//      Log.d("location", "getting location")
-//        fusedLocationClient.lastLocation
-//            .addOnSuccessListener { location : Location? ->
-//                Log.d("location", location.toString())
-//            }
+        queryRan = true
     }
 
     private var _binding: FragmentFirstBinding? = null
@@ -163,6 +132,7 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // Initialize Interface
+        btnStart = view.findViewById(R.id.btn_startTimer)
         txtStatus = view.findViewById(R.id.txt_status)
         txtTemp = view.findViewById(R.id.txt_currentWeather)
         txtTimer = view.findViewById(R.id.txt_timer)
@@ -170,15 +140,22 @@ class FirstFragment : Fragment() {
         txtTimerLength = view.findViewById(R.id.txt_recommendedTime)
 
         // Start Location
-        createLocationRequest()
         // TODO: Fix getting location
-        val location = ""
 
-        // Start Timer
+        // Start Timer or Reset Depending on State
         binding.btnStartTimer.setOnClickListener { view ->
-            Snackbar.make(view, "Timer Started!", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
-            startTimer(view)
+            if(!queryRan) runQuery(view, "https://api.openweathermap.org/data/2.5/weather?appid=8a501082a8bb88ac1a46b416876164b2&q=Ames")
+            if(!timerOn)  {
+                startTimer(view)
+                btnStart.setText("Reset")
+                timerOn = true
+            } else {
+                if(cdTimer != null) cdTimer.cancel()
+                txtTimer.setText("$timerLength secs")
+                btnStart.setText("Start")
+                timerOn = false
+            }
+
         }
 
         // Get Temperature
@@ -193,14 +170,14 @@ class FirstFragment : Fragment() {
             if(momMode) {
                 swMomMode.setText("Mom Mode Off")
                 timerLength = 10
-                txtTimer.setText("${timerLength} seconds")
-                txtTimerLength.setText("${timerLength} seconds")
+                txtTimer.setText("${timerLength} secs")
+                txtTimerLength.setText("${timerLength} secs")
                 momMode = false
             } else {
                 timerLength = 300
                 swMomMode.setText("Mom Mode On")
-                txtTimer.setText("${timerLength} seconds")
-                txtTimerLength.setText("${timerLength} seconds")
+                txtTimer.setText("${timerLength} secs")
+                txtTimerLength.setText("${timerLength} secs")
                 momMode = true
             }
         }
