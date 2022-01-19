@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,7 +15,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -28,18 +26,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONException
 import org.json.JSONObject
 import kotlin.math.roundToInt
@@ -86,7 +84,7 @@ class FirstFragment : Fragment() {
                 description = descriptionText
             }
             // Register the channel with the system
-            val notificationManager = activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = activity?.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -203,10 +201,10 @@ class FirstFragment : Fragment() {
         val intent = Intent(context, FirstFragment::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, 0)
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         // Build Notification (static text, as it is not likely to change)
-        var builder = NotificationCompat.Builder(context, getString(R.string.notification_id))
+        val builder = NotificationCompat.Builder(context, getString(R.string.notification_id))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(getString(R.string.notification_text))
@@ -223,9 +221,6 @@ class FirstFragment : Fragment() {
 
     // Check Location Permissions
     private fun checkLocationPermissions() {
-        // Variables
-        val context = requireActivity().applicationContext
-
         // Check Permissions
         val locationPermissionRequest = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
@@ -244,21 +239,30 @@ class FirstFragment : Fragment() {
     }
 
     // Get Last Location
-    @SuppressLint("MissingPermission")
     private fun findUserLocation() {
         // Variables
         val context = requireActivity().applicationContext
 
-        // Set Last Known Location
+        // Check Permissions
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            checkLocationPermissions()
+            canUseLoc = false
+            return
+        }
+
+        // Run Location
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location : Location? ->
-                lat = location?.getLatitude().toString()
-                lon = location?.getLongitude().toString()
+                lat = location?.latitude.toString()
+                lon = location?.longitude.toString()
                 Log.d("location", location.toString())
             }
     }
-
     /* END UTILITY FUNCTIONS */
 
     private var _binding: FragmentFirstBinding? = null
@@ -351,7 +355,10 @@ class FirstFragment : Fragment() {
         }
 
         // Run Late
-        val handler = Handler().postDelayed({runQuery(view)}, 1000)
+        lifecycleScope.launch {
+            delay(1000)
+            runQuery(view)
+        }
     }
 
     override fun onDestroyView() {

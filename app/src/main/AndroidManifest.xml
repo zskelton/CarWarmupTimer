@@ -6,9 +6,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <meta-data android:name="com.google.android.gms.version"
-        android:value="@integer/google_play_services_version" />
-
 <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -16,9 +13,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.WeatherCarTimer"
-        >
+        android:fullBackupContent="@xml/backup_descriptor">
         <service
-            android:name="MyNavigationService"
+            android:name=".MainActivity"
             android:foregroundServiceType="location" />
         <activity
             android:name=".MainActivity"

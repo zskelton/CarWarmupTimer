@@ -1,27 +1,14 @@
 package android.example.weathercartimer
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.pm.PackageManager
+import android.example.weathercartimer.databinding.ActivityMainBinding
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import android.view.Menu
-import android.view.MenuItem
-import android.example.weathercartimer.databinding.ActivityMainBinding
-import android.location.Location
-import android.util.Log
-import android.widget.Button
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
 
