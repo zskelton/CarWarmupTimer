@@ -2,7 +2,7 @@
     <string name="app_name">WeatherCarTimer</string>
     <string name="action_settings">No Settings</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">Enoch\'s Car Timer</string>
+    <string name="first_fragment_label">Car Warmup Timer</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
     <!-- Label Strings -->
