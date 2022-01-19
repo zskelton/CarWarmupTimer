@@ -1,3 +1,5 @@
+[![Build App](https://github.com/zskelton/CarWarmupTimer/actions/workflows/gradle-publish.yml/badge.svg)](https://github.com/zskelton/CarWarmupTimer/actions/workflows/gradle-publish.yml)
+
 Car Warmup Timer v1.0 
 ======
 <img align="left" width="100" height="100" alt="logo" src="./webassets/icon.png?raw=true">
