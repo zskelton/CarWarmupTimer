@@ -5,41 +5,14 @@
 # This workflow will build a package using Gradle and then publish it to GitHub packages when a release is created
 # For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#Publishing-using-gradle
 
-name: Gradle Package
 
-on:
-  release:
-    types: [created]
-
+name: Build App
+on: [pull_request, push]
 jobs:
   build:
-
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
-
-    - name: Build with Gradle
-      uses: gradle/gradle-build-action@4137be6a8bf7d7133955359dbd952c0ca73b1021
-      with:
-        arguments: build
-
-    # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
-    # the publishing section of your build.gradle
-    # - name: Publish to GitHub Packages
-    #   uses: gradle/gradle-build-action@4137be6a8bf7d7133955359dbd952c0ca73b1021
-    #   with:
-    #     arguments: publish
-    #   env:
-    #     USERNAME: ${{ github.actor }}
-    #     TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout the code
+        uses: actions/checkout@v2
+      - name: Build the app
+        run: ./gradlew build
